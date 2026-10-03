@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AIcivilization · DeepSeek Harness 工具</title>
+<meta name="description" content="两款已被 DSH 插件库收录的开源工具：dsh-vps 把 DeepSeek Harness 部署到你的 VPS，dsh-vps-manager 让 DeepSeek Harness 管理你的 VPS。">
+<meta name="theme-color" content="#07090d">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/dsh-vps-logo.png">
+<meta property="og:title" content="AIcivilization · DeepSeek Harness tools">
+<meta property="og:description" content="dsh-vps deploys DeepSeek Harness to your VPS. dsh-vps-manager lets DeepSeek Harness run your VPS.">
+<meta property="og:image" content="https://aicivilization.github.io/assets/dsh-vps-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07090d; --bg-2:#0b0e14; --panel:rgba(255,255,255,.035); --panel-2:rgba(255,255,255,.06);
+  --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.14);
+  --ink:#eef1f6; --ink-2:#c3cad6; --muted:#8a93a3; --faint:#5b6474;
+  --blue:#5b8cff; --cyan:#3fd0ff; --green:#2dd4a7; --lime:#9be38a;
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --nav-h:64px;
+}
+*{box-sizing:border-box}
+html{scroll-snap-type:y mandatory;scroll-behavior:smooth;background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+/* 中英文：同一处放两份，按 html[data-lang] 显示一份 */
+html[data-lang="zh"] [data-l="en"], html[data-lang="en"] [data-l="zh"]{display:none!important}
+
+/* ——— 顶部导航 ——— */
+.nav{position:fixed;inset:0 0 auto 0;height:var(--nav-h);z-index:50;display:flex;align-items:center;justify-content:space-between;
+  padding:0 clamp(16px,4vw,48px);background:rgba(7,9,13,.62);backdrop-filter:saturate(160%) blur(14px);-webkit-backdrop-filter:saturate(160%) blur(14px);
+  border-bottom:1px solid transparent;transition:border-color .3s}
+.nav.scrolled{border-bottom-color:var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.01em}
+.brand img{width:28px;height:28px;border-radius:8px}
+.menu{display:flex;align-items:center;gap:4px}
+.menu a,.menu button{font:500 14px/1 var(--sans);color:var(--ink-2);padding:9px 12px;border-radius:9px;background:none;border:0;cursor:pointer;transition:color .2s,background .2s}
+.menu a:hover,.menu button:hover{color:var(--ink);background:var(--panel-2)}
+.menu a.active{color:var(--ink)}
+.menu .sep{width:1px;height:18px;background:var(--line-2);margin:0 6px}
+.menu .gh svg{width:18px;height:18px;vertical-align:-4px}
+.lang-btn{font-family:var(--mono)!important;font-size:12px!important;letter-spacing:.04em}
+
+/* ——— 整屏分页 ——— */
+.screen{position:relative;min-height:100vh;min-height:100svh;scroll-snap-align:start;display:flex;align-items:center;overflow:hidden;
+  padding:calc(var(--nav-h) + 32px) clamp(20px,6vw,96px) 48px}
+.inner{position:relative;z-index:2;width:100%;max-width:1240px;margin:0 auto}
+.glow{position:absolute;z-index:0;border-radius:50%;filter:blur(90px);opacity:.55;pointer-events:none}
+.grid-bg{position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:56px 56px;mask-image:radial-gradient(ellipse 70% 60% at 50% 40%,#000 30%,transparent 75%);-webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 40%,#000 30%,transparent 75%);opacity:.5}
+
+/* ——— 第一屏 ——— */
+.hero{text-align:center}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font:500 13px/1 var(--sans);color:var(--ink-2);padding:8px 14px;border:1px solid var(--line-2);border-radius:999px;background:var(--panel)}
+.eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 12px var(--green)}
+h1{font-size:clamp(36px,6.2vw,84px);line-height:1.04;letter-spacing:-.035em;font-weight:800;margin:26px auto 22px;max-width:14ch}
+html[data-lang="zh"] h1{letter-spacing:-.01em;line-height:1.14}
+h1{max-width:none}
+.nowrap{white-space:nowrap}
+.grad{background:linear-gradient(100deg,var(--blue) 0%,var(--cyan) 45%,var(--green) 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{text-wrap:balance;font-size:clamp(16px,1.6vw,19px);color:var(--muted);max-width:760px;margin:0 auto}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;max-width:880px;margin:52px auto 0;text-align:left}
+.card{position:relative;display:flex;gap:16px;align-items:flex-start;padding:22px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,var(--panel-2),var(--panel));
+  transition:transform .35s cubic-bezier(.2,.7,.2,1),border-color .3s,box-shadow .3s;overflow:hidden}
+.card::before{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;background:var(--accent-line);opacity:0;transition:opacity .3s;
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.card:hover{transform:translateY(-4px);box-shadow:0 18px 50px -20px var(--accent-shadow)}
+.card:hover::before{opacity:1}
+.card .mark{flex:none;width:52px;height:52px;border-radius:14px;display:grid;place-items:center;background:#fff;overflow:hidden}
+.card .mark img{width:52px;height:52px}
+.card h3{margin:2px 0 4px;font-size:18px;letter-spacing:-.01em}
+.card p{margin:0;color:var(--muted);font-size:14px;line-height:1.55}
+.card .go{position:absolute;right:18px;top:20px;color:var(--faint);transition:transform .3s,color .3s}
+.card:hover .go{transform:translateX(3px);color:var(--ink)}
+.c-vps{--accent-line:linear-gradient(135deg,var(--blue),var(--cyan));--accent-shadow:rgba(91,140,255,.45)}
+.c-mgr{--accent-line:linear-gradient(135deg,var(--green),var(--lime));--accent-shadow:rgba(45,212,167,.4)}
+.listed{margin-top:34px;font-size:13px;color:var(--faint)}
+.listed a{color:var(--ink-2);border-bottom:1px solid var(--line-2)}
+.listed a:hover{color:var(--ink)}
+.scroll-hint{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);z-index:2;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--faint);font-size:12px;letter-spacing:.08em}
+.scroll-hint .mouse{width:22px;height:34px;border:1.5px solid var(--line-2);border-radius:12px;position:relative}
+.scroll-hint .mouse::after{content:"";position:absolute;left:50%;top:7px;width:3px;height:7px;border-radius:2px;background:var(--ink-2);transform:translateX(-50%);animation:wheel 1.8s infinite}
+@keyframes wheel{0%{opacity:0;transform:translate(-50%,0)}30%{opacity:1}100%{opacity:0;transform:translate(-50%,10px)}}
+
+/* ——— 产品屏 ——— */
+.product{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);gap:clamp(32px,5vw,72px);align-items:center}
+.product.reverse .copy{order:2}
+.product.reverse .visual{order:1}
+.kicker{display:flex;align-items:center;gap:12px;font:600 12px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.kicker .num{color:var(--faint)}
+.kicker::after{content:"";flex:0 0 40px;height:1px;background:currentColor;opacity:.5}
+.title-row{display:flex;align-items:center;gap:14px;margin:18px 0 10px}
+.title-row .logo{width:54px;height:54px;border-radius:15px;background:#fff;flex:none;overflow:hidden;box-shadow:0 10px 30px -12px var(--accent-shadow)}
+.title-row .logo img{width:54px;height:54px}
+.title-row .logo.text{display:grid;place-items:center;background:linear-gradient(135deg,var(--green),#13916f);color:#03140f;font:800 20px/1 var(--mono)}
+h2{font-size:clamp(34px,4.6vw,56px);line-height:1.05;letter-spacing:-.03em;margin:0;font-weight:800}
+.tagline{text-wrap:balance;font-size:clamp(18px,1.9vw,22px);color:var(--ink-2);margin:6px 0 26px;line-height:1.45;max-width:36ch}
+html[data-lang="en"] .tagline{max-width:34ch}
+.features{list-style:none;padding:0;margin:0 0 28px;display:grid;gap:14px}
+.features li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px;align-items:start}
+.copy,.visual{min-width:0}
+.features .ico{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
+.features .ico svg{width:16px;height:16px}
+.features b{display:block;font-weight:600;font-size:15px;color:var(--ink)}
+.features span.d{display:block;font-size:14px;color:var(--muted);line-height:1.5}
+.cmd{display:flex;align-items:center;gap:10px;min-width:0;width:100%;padding:6px 6px 6px 16px;border:1px solid var(--line-2);border-radius:12px;background:rgba(0,0,0,.35);font:13px/1.4 var(--mono);color:var(--ink-2);max-width:560px}
+.cmd .p{color:var(--accent);user-select:none}
+.cmd code{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmd button{flex:none;font:500 12px/1 var(--sans);color:var(--ink);background:var(--panel-2);border:1px solid var(--line-2);border-radius:8px;padding:8px 12px;cursor:pointer;transition:background .2s}
+.cmd button:hover{background:rgba(255,255,255,.12)}
+.cmd-note{font-size:12.5px;color:var(--faint);margin:8px 0 0 2px;overflow-wrap:anywhere}
+.cmd-note code{font-family:var(--mono);font-size:12px;white-space:nowrap;color:var(--ink-2)}
+.actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px}
+.btn{display:inline-flex;align-items:center;gap:8px;font:600 14px/1 var(--sans);padding:13px 18px;border-radius:11px;border:1px solid var(--line-2);color:var(--ink);background:var(--panel);transition:transform .2s,background .2s,box-shadow .3s}
+.btn:hover{transform:translateY(-1px);background:var(--panel-2)}
+.btn.primary{border-color:transparent;color:#05070b;background:var(--accent-btn);box-shadow:0 10px 30px -10px var(--accent-shadow)}
+.btn.primary:hover{box-shadow:0 14px 36px -10px var(--accent-shadow)}
+.btn svg{width:16px;height:16px}
+
+/* 窗口外框里的演示动图 */
+.visual{position:relative}
+.window{position:relative;border-radius:14px;border:1px solid var(--line-2);background:#0d1118;box-shadow:0 40px 120px -40px var(--accent-shadow),0 0 0 1px rgba(255,255,255,.02) inset;overflow:hidden;transform:perspective(1600px) rotateY(var(--tilt,-6deg)) rotateX(2deg);transition:transform .8s cubic-bezier(.2,.7,.2,1)}
+.product.reverse .window{--tilt:6deg}
+.window:hover{transform:perspective(1600px) rotateY(0) rotateX(0)}
+.bar{display:flex;align-items:center;gap:7px;height:38px;padding:0 14px;border-bottom:1px solid var(--line);background:linear-gradient(#141923,#10141c)}
+.bar i{width:11px;height:11px;border-radius:50%;background:#ff5f57}
+.bar i:nth-child(2){background:#febc2e}.bar i:nth-child(3){background:#28c840}
+.bar .url{margin-left:12px;flex:1;max-width:340px;height:24px;border-radius:7px;background:rgba(255,255,255,.05);display:flex;align-items:center;gap:6px;padding:0 10px;font:12px/1 var(--mono);color:var(--muted);white-space:nowrap;overflow:hidden}
+.bar .url svg{width:11px;height:11px;flex:none;color:var(--green)}
+.window img{width:100%;height:auto;aspect-ratio:var(--ratio);background:#0b0e14}
+.badge-float{position:absolute;z-index:3;display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;border:1px solid var(--line-2);background:rgba(13,17,24,.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font-size:13px;box-shadow:0 20px 40px -20px rgba(0,0,0,.8)}
+.badge-float b{font-weight:600}
+.badge-float .k{font:600 18px/1 var(--mono);color:var(--accent)}
+.badge-float.b1{left:-18px;bottom:28px}
+.badge-float.b2{right:-14px;top:64px}
+
+/* 主题色 */
+.t-vps{--accent:#7aa6ff;--accent-soft:rgba(91,140,255,.14);--accent-shadow:rgba(91,140,255,.5);--accent-btn:linear-gradient(135deg,#7aa6ff,#3fd0ff)}
+.t-mgr{--accent:#3ee0b5;--accent-soft:rgba(45,212,167,.14);--accent-shadow:rgba(45,212,167,.42);--accent-btn:linear-gradient(135deg,#3ee0b5,#9be38a)}
+
+/* 页脚（最后一屏底部） */
+.foot{position:absolute;left:0;right:0;bottom:0;z-index:2;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:18px clamp(20px,6vw,96px);border-top:1px solid var(--line);font-size:13px;color:var(--faint)}
+.foot a:hover{color:var(--ink-2)}
+
+/* 右侧圆点 */
+.dots{position:fixed;right:clamp(12px,2vw,28px);top:50%;transform:translateY(-50%);z-index:40;display:flex;flex-direction:column;gap:14px}
+.dots a{position:relative;width:10px;height:10px;border-radius:50%;border:1.5px solid var(--faint);transition:all .3s}
+.dots a.on{background:var(--ink);border-color:var(--ink);transform:scale(1.15)}
+.dots a span{position:absolute;right:20px;top:50%;transform:translateY(-50%);white-space:nowrap;font-size:12px;color:var(--ink-2);opacity:0;pointer-events:none;transition:opacity .2s}
+.dots a:hover span{opacity:1}
+
+/* 进场动画 */
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1)}
+.in .reveal{opacity:1;transform:none}
+.in .reveal.d1{transition-delay:.08s}.in .reveal.d2{transition-delay:.16s}.in .reveal.d3{transition-delay:.24s}.in .reveal.d4{transition-delay:.32s}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .reveal{opacity:1;transform:none;transition:none}
+  .window{transform:none}
+  .scroll-hint .mouse::after{animation:none}
+}
+
+/* 窄屏：上下排列，取消强制整屏吸附 */
+/* 矮窗口：第一屏收紧，隐藏滚动提示，避免压住底部内容 */
+@media (max-height:820px){
+  .scroll-hint{display:none}
+  .cards{margin-top:36px}
+  h1{margin:20px auto 16px}
+}
+@media (max-width:900px){
+  html{scroll-snap-type:y proximity}
+  .product,.product.reverse{grid-template-columns:minmax(0,1fr)}
+  .product.reverse .copy{order:1}.product.reverse .visual{order:2}
+  .window,.product.reverse .window{transform:none}
+  .badge-float{display:none}
+  .dots{display:none}
+  .screen{padding-bottom:72px}
+}
+@media (max-width:640px){
+  .cards{grid-template-columns:1fr}
+  .menu .m-prod{display:none}
+  .brand span{display:none}
+  .scroll-hint{display:none}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav" id="nav">
+  <a class="brand" href="#top"><img src="assets/dsh-vps-logo.png" alt=""><span>AIcivilization</span></a>
+  <div class="menu">
+    <a class="m-prod" href="#dsh-vps" data-target="dsh-vps">dsh-vps</a>
+    <a class="m-prod" href="#dsh-vps-manager" data-target="dsh-vps-manager">dsh-vps-manager</a>
+    <span class="sep m-prod"></span>
+    <a class="gh" href="https://github.com/AIcivilization" target="_blank" rel="noopener" aria-label="GitHub"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 0-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.2.5-2.3 1.3-3.1-.2-.4-.6-1.6 0-3.2 0 0 1-.3 3.4 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.8.1 3.2.8.8 1.3 1.9 1.3 3.2 0 4.6-2.8 5.6-5.5 5.9.5.4.9 1.1.9 2.3v3.3c0 .3.1.7.8.6A12 12 0 0 0 12 .3"/></svg></a>
+    <button class="lang-btn" id="langBtn" type="button" aria-label="Switch language"><span data-l="zh">EN</span><span data-l="en">中文</span></button>
+  </div>
+</nav>
+
+<div class="dots" id="dots">
+  <a href="#top" data-target="top"><span data-l="zh">首页</span><span data-l="en">Home</span></a>
+  <a href="#dsh-vps" data-target="dsh-vps"><span>dsh-vps</span></a>
+  <a href="#dsh-vps-manager" data-target="dsh-vps-manager"><span>dsh-vps-manager</span></a>
+</div>
+
+<!-- ═══ 第一屏：总览 ═══ -->
+<section class="screen hero" id="top">
+  <div class="grid-bg"></div>
+  <div class="glow" style="width:620px;height:620px;left:-160px;top:-180px;background:#2b55d6"></div>
+  <div class="glow" style="width:560px;height:560px;right:-160px;bottom:-200px;background:#0f8f74;opacity:.42"></div>
+  <div class="inner">
+    <div class="reveal"><span class="eyebrow"><span class="dot"></span><span data-l="zh">两款均已被 DSH 插件库收录</span><span data-l="en">Both listed in the DSH plugin directory</span></span></div>
+    <h1 class="reveal d1"><span data-l="zh">把 <span class="grad nowrap">DeepSeek Harness</span><br>带到你的服务器上</span><span data-l="en">Take <span class="grad nowrap">DeepSeek Harness</span><br>to your own server</span></h1>
+    <p class="lead reveal d2"><span data-l="zh">一个把 DSH 部署到你的 VPS，一个让 DSH 管理你的 VPS。开源、免费，几分钟上手。</span><span data-l="en">One deploys DSH to your VPS; the other lets DSH run it. Open source, free, up and running in minutes.</span></p>
+    <div class="cards reveal d3">
+      <a class="card c-vps" href="#dsh-vps">
+        <span class="mark"><img src="assets/dsh-vps-logo.png" alt=""></span>
+        <span>
+          <h3>dsh-vps</h3>
+          <p data-l="zh">把原版 DSH 装到你的 VPS：登录页、自动 HTTPS、跟随官方一键升级，任何地方用浏览器或手机打开。</p>
+          <p data-l="en">Put stock DSH on your VPS: login page, automatic HTTPS, one-click upstream upgrades — open it from any browser or phone.</p>
+        </span>
+        <svg class="go" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </a>
+      <a class="card c-mgr" href="#dsh-vps-manager">
+        <span class="mark" style="background:linear-gradient(135deg,#2dd4a7,#13916f);color:#03140f;font:800 17px/1 var(--mono)">&gt;_</span>
+        <span>
+          <h3>dsh-vps-manager</h3>
+          <p data-l="zh">在 DSH 对话里管理你的 VPS：零 token 命令、真终端与文件管理，AI 操作按风险分级确认。</p>
+          <p data-l="en">Run your VPS from a DSH conversation: zero-token commands, a real terminal and file manager, AI actions confirmed by risk level.</p>
+        </span>
+        <svg class="go" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+    <p class="listed reveal d4"><span data-l="zh">收录于</span><span data-l="en">Listed on</span> <a href="https://awesome-dsh-plugin.com" target="_blank" rel="noopener">awesome-dsh-plugin</a> · <a href="https://dshget.com" target="_blank" rel="noopener">DSH Get</a></p>
+  </div>
+  <div class="scroll-hint"><span class="mouse"></span><span data-l="zh">向下滚动</span><span data-l="en">SCROLL</span></div>
+</section>
+
+<!-- ═══ 第二屏：dsh-vps ═══ -->
+<section class="screen t-vps" id="dsh-vps">
+  <div class="glow" style="width:640px;height:640px;right:-120px;top:10%;background:#2b55d6;opacity:.45"></div>
+  <div class="glow" style="width:420px;height:420px;left:20%;bottom:-260px;background:#127ea8;opacity:.35"></div>
+  <div class="inner product">
+    <div class="copy">
+      <div class="kicker reveal"><span class="num">01</span><span data-l="zh">部署</span><span data-l="en">Deploy</span></div>
+      <div class="title-row reveal d1"><span class="logo"><img src="assets/dsh-vps-logo.png" alt="dsh-vps"></span><h2>dsh-vps</h2></div>
+      <p class="tagline reveal d1"><span data-l="zh">一条命令，把原版 DeepSeek Harness 装进你的 VPS，在任何地方打开。</span><span data-l="en">One command puts stock DeepSeek Harness on your VPS — open it from anywhere.</span></p>
+      <ul class="features reveal d2">
+        <li><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span><span><b data-l="zh">登录页 + 自动 HTTPS</b><b data-l="en">Login page + automatic HTTPS</b><span class="d" data-l="zh">原版界面公网可用：设置、API Key、插件市场照常读写</span><span class="d" data-l="en">The stock UI works on a public domain — settings, API keys, plugin market</span></span></li>
+        <li><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></span><span><b data-l="zh">跟随官方，一键升级</b><b data-l="en">Follows upstream, upgrades in one click</b><span class="d" data-l="zh">新版本自动提示，自检不通过自动回滚</span><span class="d" data-l="en">New releases are offered in the page; a failed self-check rolls back</span></span></li>
+        <li><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg></span><span><b data-l="zh">在 DSH 里填表就能装</b><b data-l="en">Install from a form inside DSH</b><span class="d" data-l="zh">Mac / Windows / Linux 的 DSH 都行，也能一键卸载</span><span class="d" data-l="en">From DSH on Mac, Windows or Linux — and uninstall the same way</span></span></li>
+        <li><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg></span><span><b data-l="zh">扫码装到手机桌面</b><b data-l="en">Scan to add to your phone</b><span class="d" data-l="zh">全屏打开，像原生应用一样用</span><span class="d" data-l="en">Opens full-screen, like a native app</span></span></li>
+      </ul>
+      <div class="reveal d3">
+        <div class="cmd"><span class="p">$</span><code id="cmd-vps">curl -fsSL https://raw.githubusercontent.com/AIcivilization/dsh-vps/main/install.sh | sudo bash -s</code><button type="button" data-copy="cmd-vps"><span data-l="zh">复制</span><span data-l="en">Copy</span></button></div>
+        <p class="cmd-note"><span data-l="zh">在 Ubuntu 22.04+ / Debian 12+ 上执行；有域名加 <code>-- --domain 你的域名</code></span><span data-l="en">Run on Ubuntu 22.04+ / Debian 12+; with a domain, append <code>-- --domain your.domain</code></span></p>
+      </div>
+      <div class="actions reveal d4">
+        <a class="btn primary" href="https://aicivilization.github.io/dsh-vps/"><span data-l="zh">查看详情</span><span data-l="en">Learn more</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 5l7 7-7 7"/></svg></a>
+        <a class="btn" href="https://github.com/AIcivilization/dsh-vps" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+    <div class="visual reveal d2">
+      <div class="window" style="--ratio:2210/1574">
+        <div class="bar"><i></i><i></i><i></i><span class="url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>dsh.example.com</span></div>
+        <img src="assets/dsh-vps-demo.gif" alt="dsh-vps: install, setup wizard, login, DSH" loading="lazy" width="2210" height="1574">
+      </div>
+      <div class="badge-float b1"><span class="k">1</span><span><b data-l="zh">条命令装好</b><b data-l="en">command to install</b></span></div>
+      <div class="badge-float b2"><span class="k">30</span><span><b data-l="zh">天免登录</b><b data-l="en">days signed in</b></span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 第三屏：dsh-vps-manager ═══ -->
+<section class="screen t-mgr" id="dsh-vps-manager">
+  <div class="glow" style="width:640px;height:640px;left:-140px;top:12%;background:#0f8f74;opacity:.42"></div>
+  <div class="glow" style="width:420px;height:420px;right:12%;bottom:-260px;background:#3c8f2c;opacity:.28"></div>
+  <div class="inner product reverse">
+    <div class="copy">
+      <div class="kicker reveal"><span class="num">02</span><span data-l="zh">管理</span><span data-l="en">Operate</span></div>
+      <div class="title-row reveal d1"><span class="logo text">&gt;_</span><h2>dsh-vps-manager</h2></div>
+      <p class="tagline reveal d1"><span data-l="zh">在 DSH 对话里管理你的 VPS，像 SSH 一样顺手。</span><span data-l="en">Run your VPS from a DSH conversation, as smoothly as over SSH.</span></p>
+      <ul class="features reveal d2">
+        <li><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></span><span><b data-l="zh">21 条零 token 命令</b><b data-l="en">21 zero-token commands</b><span class="d" data-l="zh">看状态、装软件、重启等机器回来，不走模型</span><span class="d" data-l="en">Status, installs, reboot-and-wait — without the model</span></span></li>
+        <li><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 4 6v6c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6l-8-3z"/><path d="m9 12 2 2 4-4"/></svg></span><span><b data-l="zh">AI 操作，按风险分级确认</b><b data-l="en">AI actions, confirmed by risk</b><span class="d" data-l="zh">只读自动、改动问你、高危再问；改防火墙前设好自动恢复</span><span class="d" data-l="en">Read-only runs, changes ask, risky ones ask twice; firewall edits get an auto-restore</span></span></li>
+        <li><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M13 15h4"/></svg></span><span><b data-l="zh">对话里的终端与文件管理</b><b data-l="en">Terminal and files in the conversation</b><span class="d" data-l="zh">真终端，vim、top 都能用；拖拽上传，改前自动备份</span><span class="d" data-l="en">A real terminal (vim, top); drag-and-drop uploads with backups before edits</span></span></li>
+        <li><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M8 7h8M8 11h6"/></svg></span><span><b data-l="zh">29 条运维菜谱</b><b data-l="en">29 maintenance recipes</b><span class="d" data-l="zh">可重复执行；AI 做成的事一句话存成菜谱</span><span class="d" data-l="en">Repeatable; save anything the AI did as a recipe in one sentence</span></span></li>
+      </ul>
+      <div class="reveal d3">
+        <div class="cmd"><span class="p">$</span><code id="cmd-mgr">dsh plugin add dsh-vps-manager</code><button type="button" data-copy="cmd-mgr"><span data-l="zh">复制</span><span data-l="en">Copy</span></button></div>
+        <p class="cmd-note"><span data-l="zh">或在 DSH 插件市场搜索 dsh-vps-manager 一键安装</span><span data-l="en">Or search dsh-vps-manager in the DSH plugin market</span></p>
+      </div>
+      <div class="actions reveal d4">
+        <a class="btn primary" href="https://aicivilization.github.io/dsh-vps-manager/"><span data-l="zh">查看详情</span><span data-l="en">Learn more</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 5l7 7-7 7"/></svg></a>
+        <a class="btn" href="https://github.com/AIcivilization/dsh-vps-manager" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+    <div class="visual reveal d2">
+      <div class="window" style="--ratio:1200/857">
+        <div class="bar"><i></i><i></i><i></i><span class="url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m4 17 6-6-6-6M12 19h8"/></svg>DeepSeek Harness · VPS</span></div>
+        <img src="assets/dsh-vps-manager-demo.gif" alt="dsh-vps-manager in a DSH conversation" loading="lazy" width="1200" height="857">
+      </div>
+      <div class="badge-float b1"><span class="k">0</span><span><b>token</b><span data-l="zh"> 查询服务器</span><span data-l="en"> to query a server</span></span></div>
+      <div class="badge-float b2"><span class="k">3</span><span><b data-l="zh">平台：Win / Mac / Linux</b><b data-l="en">platforms: Win / Mac / Linux</b></span></div>
+    </div>
+  </div>
+  <footer class="foot">
+    <span>© AIcivilization · <span data-l="zh">开源，MIT 许可</span><span data-l="en">Open source, MIT licensed</span></span>
+    <span><a href="https://github.com/AIcivilization" target="_blank" rel="noopener">GitHub</a> · <a href="https://www.npmjs.com/package/dsh-vps" target="_blank" rel="noopener">npm</a> · <a href="https://github.com/deepseek-ai/deepseek-harness" target="_blank" rel="noopener">DeepSeek Harness</a></span>
+  </footer>
+</section>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  // 语言：手动选择（本机记住）> 浏览器语言
+  function saved() { try { return localStorage.getItem("aic-lang"); } catch (e) { return null; } }
+  function setLang(l) {
+    root.setAttribute("data-lang", l);
+    root.lang = l === "zh" ? "zh-CN" : "en";
+    document.title = l === "zh" ? "AIcivilization · DeepSeek Harness 工具" : "AIcivilization · DeepSeek Harness tools";
+  }
+  setLang(saved() || (/^zh/i.test(navigator.language || "") ? "zh" : "en"));
+  document.getElementById("langBtn").addEventListener("click", function () {
+    var next = root.getAttribute("data-lang") === "zh" ? "en" : "zh";
+    setLang(next);
+    try { localStorage.setItem("aic-lang", next); } catch (e) {}
+  });
+
+  // 复制命令
+  document.querySelectorAll("[data-copy]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var text = document.getElementById(btn.getAttribute("data-copy")).textContent;
+      var done = function () {
+        var zh = root.getAttribute("data-lang") === "zh";
+        var old = btn.innerHTML;
+        btn.textContent = zh ? "已复制" : "Copied";
+        setTimeout(function () { btn.innerHTML = old; }, 1400);
+      };
+      if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, function () {});
+    });
+  });
+
+  // 进场动画 + 当前屏高亮（导航与右侧圆点）
+  var screens = Array.prototype.slice.call(document.querySelectorAll(".screen"));
+  var links = document.querySelectorAll("[data-target]");
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) {
+        e.target.classList.add("in");
+        // 手机上一屏可能比视口高很多，比例到不了 0.5：改看这一屏是否占据视口中线
+        var r = e.target.getBoundingClientRect();
+        if (r.top <= innerHeight / 2 && r.bottom >= innerHeight / 2) {
+          links.forEach(function (a) {
+            var on = a.getAttribute("data-target") === e.target.id;
+            a.classList.toggle("on", on);
+            a.classList.toggle("active", on);
+          });
+        }
+      }
+    });
+  }, { threshold: [0.1, 0.55] });
+  screens.forEach(function (s) { io.observe(s); });
+  document.getElementById("top").classList.add("in");
+
+  // 导航栏滚动后加分隔线
+  var nav = document.getElementById("nav");
+  addEventListener("scroll", function () { nav.classList.toggle("scrolled", scrollY > 8); }, { passive: true });
+
+  // 键盘翻屏
+  addEventListener("keydown", function (e) {
+    if (["ArrowDown", "PageDown", "ArrowUp", "PageUp"].indexOf(e.key) < 0 || /input|textarea/i.test(e.target.tagName)) return;
+    var i = screens.findIndex(function (s) { return Math.abs(s.getBoundingClientRect().top) < innerHeight / 2; });
+    var next = e.key === "ArrowDown" || e.key === "PageDown" ? i + 1 : i - 1;
+    if (screens[next]) { e.preventDefault(); screens[next].scrollIntoView({ behavior: "smooth" }); }
+  });
+})();
+</script>
+</body>
+</html>
